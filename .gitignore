@@ -1,0 +1,14 @@
+*/**/*tempFiles
+*/**/*figure
+slides/*.aux
+slides/*.log
+slides/*.nav
+slides/*.out
+slides/*.snm
+slides/*.toc
+*/**/*data
+data
+figure
+tempFiles
+
+

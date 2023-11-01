@@ -1,0 +1,270 @@
+\documentclass[aspectratio=169]{beamer}
+\beamertemplatenavigationsymbolsempty
+%\includeonlyframes{current}
+\usefonttheme{professionalfonts}
+%\usepackage{newtxtext,newtxmath}
+\usepackage{animate}
+\usepackage{graphicx}
+\usepackage[labelformat=empty]{caption}
+\usepackage{beamerthemesplit}
+\usepackage{textpos}
+\usepackage[percent]{overpic}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{hhline}
+\usepackage{siunitx}
+\usepackage{comment}
+\usepackage{tikz}
+\usepackage{transparent}
+\usepackage{soul}
+%\usepackage{hyperref}
+%\usepackage{enumitem}
+%\usepackage{transparent}
+%\usepackage[orientation=landscape,size=custom,width=16,height=9,scale=0.5,debug]{beamerposter} 
+
+\newcommand{\conv}{\scalebox{0.6}{$\perp$}}
+\newcommand{\como}{\scalebox{0.6}{$+$}}
+\newcommand{\Var}{\mathrm{Var}}
+
+
+\title{Upsample catalog by events}
+\author{Charlie Wusuo Liu}
+%\date{May 29, 2019}
+
+
+\expandafter\def\expandafter\insertshorttitle\expandafter{%
+	\insertshorttitle\hfill%
+	\insertframenumber\,/\,\inserttotalframenumber}
+
+%\setbeamercovered{%
+	%	still covered={\opaqueness<1->{10}},  
+	%	again covered={\opaqueness<1->{10}}}
+
+
+\begin{document}
+
+
+\begin{frame}{Objective}
+\begin{textblock}{1}(7.1,-1.5)
+\includegraphics[scale=0.4]{../figure/eventCharacterization.pdf}
+\end{textblock}
+
+
+\begin{textblock}{7.25}(-0.5,-5.2)
+
+\tiny Given a 100K catalog,\smallskip
+
+\begin{enumerate}
+\tiny\item Replace each event in the last 90K with one in the first 10K years.\medskip
+
+\tiny\item The replacement and the original events should be as close as possible.\medskip
+\end{enumerate}
+
+\tiny Each event is characterized by a vector of losses in Subareas.\medskip\pause
+
+\tiny Similarity between two events is measured by a distance function of the two loss vectors.\medskip
+
+\tiny For each event in the last 90K, use its nearest neighbor in the first 10K as the replacement.\medskip\pause
+
+\tiny The nearest neighbor (NN) selection is a secondary objective. The primary goal is to minimize differences in the new 100K's EPs and the ``true" 100K's EPs. The NN selection is a stepping stone.\medskip\pause
+
+\begin{itemize}
+\tiny\item Even if the primary goal can be achieved in other approaches, we would still prefer the NN proxy. Possession of event level similarity has merits.\medskip\pause 
+\end{itemize}
+
+\tiny Previous work selects the nearest neighbor using \underline{\textcolor{blue}{\href{https://en.wikipedia.org/wiki/Taxicab_geometry}{L1}}} (Manhattan) distance function with modification.\smallskip\pause
+
+\begin{itemize}
+\tiny\item Loss difference in each Subarea is multiplied by a factor. The factor seems adhoc and its motivation is unclear. The legacy document questioned its necessity. 
+\end{itemize}
+\end{textblock}
+\end{frame}
+
+
+\begin{frame}{Evaluation metric}
+\begin{textblock}{1}(8.5,-3.5)
+\includegraphics[scale=0.42]{../figure/cod.pdf}
+\end{textblock}
+
+\begin{textblock}{8.8}(-0.75,-5.2)
+\tiny We evaluate the upsampled catalog by computing the difference between its EPs and the ``true" catalog's EPs.\smallskip
+
+\underline{\textcolor{blue}{\href{https://en.wikipedia.org/wiki/Coefficient_of_determination}{Coefficient of determination}}}:\begin{equation*}
+r^2 = 1 - \frac{ \sum_{s=1}^{S}\sum_{y=1}^{100\text{K}} \left[\text{loss}^{ \text{upsampled}}\left( \text{Subarea}_s, \text{Year}_y \right) - \text{loss}^{ \text{truth}}\left( \text{Subarea}_s, \text{Year}_y \right) \right] ^ 2  }{
+\sum_{s=1}^{S}\sum_{y=1}^{100\text{K}} \left[\overline{\text{loss}} - \text{loss}^{ \text{truth}}\left( \text{Subarea}_s, \text{Year}_y \right) \right]^2 }
+\end{equation*} where $\overline{\text{loss}} = \frac{1}{100\text{K}\cdot S} \sum_{s=1}^{S}\sum_{y=1}^{100\text{K}}\text{loss}^{ \text{truth}}\left( \text{Subarea}_s, \text{Year}_y \right)$.\medskip
+
+\begin{enumerate}
+\tiny\item \textcolor{blue}{$\text{loss}\left( \text{Subarea}_s, \text{Year}_y \right)$ is the $y$-th ordered annual loss in $\text{Subarea}_s$}.\medskip\pause
+
+\tiny\item $r^2$ is the most commonly used evaluation for regression models. We shelve the exploration of evaluation metric for now. It can be a never-ending self debate.\medskip\pause
+
+\tiny\item Earthquake catalog downsampling uses a variant of $r^2$ but focuses on only a few order statistics.\medskip\pause
+
+\tiny\item Table shows Euclidean leads the board, but most other distance measures also yield sufficiently high $r^2$s.\smallskip\pause
+
+\tiny\item Computation shortcut: for each event, use the countrywide losses to determine its nearest 1000 neighbors. The computation is trivial because losses in 1-d space can be searched after sorting. Then among the 1000 candidates, compute distances and select the nearest neighbor $\implies$ 10x speedup. Sparse representation of events$\implies$ +10x speedup.
+
+\end{enumerate}
+\end{textblock}
+\end{frame}
+
+
+\begin{frame}{100 events sampled at random }
+
+\begin{textblock}{1}(3,-4)
+\animategraphics[controls,scale=0.296,trim=0cm 0cm 0cm 0cm]{5}{../figure/lossFootprint5eventsOnePic}{1}{1}
+\end{textblock}
+
+\begin{textblock}{3}(-0.5,-4)
+\scriptsize Color scale is not linear to loss.\bigskip
+
+\scriptsize Similarity in spatial footprints alone does not dictate closeness between events.\bigskip\pause
+
+\scriptsize Overall, New Euclidean preserves the spatial footprint slightly better, but has no consistent advantage over the previous work for every event.\bigskip
+
+\scriptsize We focus on Euclidean and L$_1$ moving forward.
+\end{textblock}
+\end{frame}
+
+
+
+\begin{frame}{Exploration: feature engineering}
+\begin{textblock}{1}(-0.5,-5)
+\includegraphics[scale=0.32]{../figure/featureEngineering.pdf}
+\end{textblock}
+
+\begin{textblock}{6}(0,0)
+\tiny Using county losses alone to characterize events can be disastrous because of \underline{\textcolor{blue}{\href{https://en.wikipedia.org/wiki/Curse_of_dimensionality}{curse of dimensionality}}}. Distance measure loses potency of distinguishing points in high-D space due to sparsity.\bigskip\pause
+
+\tiny Including Country and State losses in the characteristic vector provides more spatial context of an event, and is necessary to let the distance measure identify reasonable neighbors.\bigskip\pause
+
+\tiny For building spatial context, a radical approach is to characterize the event using losses over a fine regular grid, and employ the feature engineering in convolutional neural net --- convolve the loss image with kernels of various sizes, then concatenate the feature maps as the characteristic vector. However this could be too computationally heavy as the feature dimensionality can be massive.\bigskip
+
+
+\end{textblock}
+
+\begin{textblock}{6}(7.5,0)
+\tiny As a compromise, we replace convolution of nearby pixels with averaging nearby county losses --- the closest 8, 16, 32, 64 counties.\bigskip\pause
+
+\tiny With the engineered features, Country and State losses can be obsolete and may have negative impact. Keep them for now.
+\end{textblock}
+
+\end{frame}
+
+
+\begin{frame}{100 events sampled at random}
+\begin{textblock}{1}(-0.5,-5.3)
+\animategraphics[controls,scale=0.296,trim=0cm 0cm 0cm 0cm]{5}{../figure/lossFootprint6eventsOnePic-dimExtended}{1}{1}
+\end{textblock}
+
+\begin{textblock}{1}(10.5,5)
+\includegraphics[scale=0.16]{../figure/dimExtCod.PNG}
+\end{textblock}
+
+
+\begin{textblock}{10}(0,5.2)
+Overall, ``Euclidean + extended dimensions" preserves the spatial footprint slightly better, but still has no consistent advantage for all events.
+\end{textblock}
+\end{frame}
+
+
+\begin{frame}{Exploration: feature engineering, exclude country and states}
+\begin{textblock}{1}(-0.75,-5.4)
+\includegraphics[scale=0.32]{../figure/featureEngineeringNoCountryStates.pdf}
+\end{textblock}
+
+\begin{textblock}{1}(11,-3.3)
+\includegraphics[scale=0.17,trim={0cm 1cm 0cm 0cm},clip]{../figure/dimExtCodNoCountryStates.PNG}
+\end{textblock}
+
+\begin{textblock}{1}(1.25,-0.97)
+\animategraphics[controls,scale=0.27,trim=0cm 0cm 0cm 0cm,clip]{5}{../figure/lossFootprint6eventsOnePic-dimExtended-noCountryStates}{1}{1}
+\end{textblock}
+
+\begin{textblock}{1.5}(-0.75,1)
+\tiny Overall, ``Euclidean + dim extended + Country and States excluded" preserves spatial footprints better than ``Euclidean + dim extended".
+\end{textblock}
+
+\end{frame}
+
+
+
+\begin{frame}{Jaccard (binary distance) }
+
+\begin{textblock}{1}(3,-4)
+\animategraphics[controls,scale=0.296,trim=0cm 0cm 0cm 0cm]{5}{../figure/lossFootprint5eventsOnePic-dimExt-Jaccard}{1}{1}
+\end{textblock}
+
+
+\begin{textblock}{1}(-0.75,-5)
+\includegraphics[scale=0.16]{../figure/dimExtCodNoCountryStates.PNG}
+\end{textblock}
+
+
+\begin{textblock}{3}(-0.75,-2)
+Jaccard/binary is the best to preserve the spatial footprint, but it does not take loss magnitudes into account and thus yields poor $r^2$.
+\end{textblock}
+\end{frame}
+
+
+\begin{frame}{Conclusion and next steps}
+
+\begin{enumerate}
+\item Product team's approach appears good enough in terms of $r^2$. The scaling factors in their approach may be overengineered.\medskip\pause
+
+\item If they do not want to stay with their approach, we would recommend ``Euclidean + feature engineering - country and states". We can facilitate friendly and fast software for the task (or are we taking over the project entirely?).\medskip\pause
+
+\item Sophistication: because Jaccard/binary is the best to preserve spatial footprint but struggles with $r^2$, we could try:\medskip
+\begin{enumerate}
+
+\item Using Jaccard, store the $K$ (e.g. $K=5$) nearest neighbors for each event.\medskip\pause
+
+\item For each event, if the Euclidean NN is among the Jaccard $K$ NNs, freeze the replacement event to the Euclidean NN.\medskip
+
+\item For all the other events, run stochastic optimization that maximizes $r^2$ by selecting one of the $K$ nearest neighbors.
+\end{enumerate}
+
+\end{enumerate}
+\end{frame}
+
+\begin{frame}{Paper topics ranked by preferences}
+\begin{enumerate}
+\item Transformer for spatial model.\medskip\pause
+
+\item Tsunami intensity acceleration using LASSO instead of convolutional neural net. Improve the approach and apply it to open source benchmarking for e.g. image regression/segmentation. Observe its competitiveness. Introduce the accelerator based on exploiting Cauchy inequality on the regularization path, and see if it is generic enough for all GLMs.\medskip\pause
+
+\item Catalog downsampling. The avenue will be a little different since the star of the show is the data structure designed for updating order statistics of high-D data. There are tons of algorithm researches on how to find/approximate quantiles in a data streaming environment. Our work could be relevant.\medskip\pause
+
+\item Four-point regriding. A long shot but there might be rich theoretical/numerical materials that can be mined or built. 
+\end{enumerate}
+\end{frame}
+
+% ---- first slide is here. Do not delete or change this line (set for making R package)
+
+
+%\begin{frame}{Bayesian update using Tohoku PMFs}
+%\animategraphics[controls,scale=0.59,trim=0cm 0cm 0cm 0cm]{5}{../figure/tohokuVSnz}{1}{1}
+%\end{frame}
+
+
+
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
